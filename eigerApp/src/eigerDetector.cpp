@@ -170,7 +170,7 @@ static void initializeTaskC (void *drvPvt)
  *            ASYN_CANBLOCK is set in asynFlags.
  */
 eigerDetector::eigerDetector (const char *portName, const char *serverHostname,
-        int maxBuffers, size_t maxMemory, int priority,
+        const char *streamHostname, int maxBuffers, size_t maxMemory, int priority,
         int stackSize)
 
     : ADDriver(portName, 2, 0, maxBuffers, maxMemory,
@@ -191,7 +191,7 @@ eigerDetector::eigerDetector (const char *portName, const char *serverHostname,
     mParams(this, &mApi, pasynUserSelf)
 {
     const char *functionName = "eigerDetector";
-    strncpy(mHostname, serverHostname, sizeof(mHostname));
+    strncpy(mHostname, streamHostname, sizeof(mHostname));
 
     // Get API version
     mAPIVersion = mApi.getAPIVersion();
@@ -281,7 +281,7 @@ eigerDetector::eigerDetector (const char *portName, const char *serverHostname,
     vector<string> modeEnum;
     modeEnum.reserve(2);
     modeEnum.push_back("disabled");
-    modeEnum.push_back("enabled");    
+    modeEnum.push_back("enabled");
 
     // Acquisition
     mWavelength       = mParams.create(EigWavelengthStr,      asynParamFloat64, SSDetConfig, "wavelength");
@@ -851,13 +851,13 @@ void eigerDetector::controlTask (void)
         if(dataSource == SOURCE_FILEWRITER || (fwEnable && saveFiles))
         {
             acquisition_t acq;
-            
+
             string acq_pattern_temp;
             mFWNamePattern->get(acq_pattern_temp);
             strncpy(acq.pattern, acq_pattern_temp.c_str(), sizeof(acq.pattern));
             // Add null terminator to end of pattern string in case buffer is not large enough
             acq.pattern[MAX_BUF_SIZE - 1] = '\0';
-            
+
             acq.sequenceId  = sequenceId;
             acq.nDataFiles  = ceil(((double)(numImages*numTriggers))/((double)numImagesPerFile));
             acq.saveFiles   = saveFiles;
@@ -1006,7 +1006,7 @@ void eigerDetector::controlTask (void)
             } else {
                 setIntegerParam(ADStatus, ADStatusIdle);
                 setIntegerParam(ADAcquire, 0);
-            }         
+            }
         } else if(adStatus == ADStatusAborted) {
             setStringParam(ADStatusMessage, "Acquisition aborted");
             setIntegerParam(ADAcquire, 0);
@@ -1409,7 +1409,7 @@ void eigerDetector::streamTask (void)
             NDArray *pArray;
             size_t *dims = frame.shape;
             NDDataType_t type;
-            switch (frame.type) 
+            switch (frame.type)
             {
                 case stream_frame_t::UINT32:  type = NDUInt32; break;
                 case stream_frame_t::UINT16:  type = NDUInt16; break;
@@ -1945,30 +1945,33 @@ asynStatus eigerDetector::drvUserCreate(asynUser *pasynUser, const char *drvInfo
     return ADDriver::drvUserCreate(pasynUser, drvInfo, pptypeName, psize);
 }
 
-extern "C" int eigerDetectorConfig(const char *portName, const char *serverPort,
+extern "C" int eigerDetectorConfig(const char *portName, const char *serverPort, const char *streamPort,
                                    int maxBuffers, size_t maxMemory, int priority, int stackSize)
 {
-    new eigerDetector(portName, serverPort, maxBuffers, maxMemory, priority, stackSize);
+    new eigerDetector(portName, serverPort, streamPort, maxBuffers, maxMemory, priority, stackSize);
     return asynSuccess;
 }
 
 // Code for iocsh registration
 static const iocshArg eigerDetectorConfigArg0 = {"Port name", iocshArgString};
 static const iocshArg eigerDetectorConfigArg1 = {"Server host name", iocshArgString};
-static const iocshArg eigerDetectorConfigArg2 = {"maxBuffers", iocshArgInt};
-static const iocshArg eigerDetectorConfigArg3 = {"maxMemory", iocshArgInt};
-static const iocshArg eigerDetectorConfigArg4 = {"priority", iocshArgInt};
-static const iocshArg eigerDetectorConfigArg5 = {"stackSize", iocshArgInt};
+static const iocshArg eigerDetectorConfigArg2 = {"Stream host name", iocshArgString};
+static const iocshArg eigerDetectorConfigArg3 = {"maxBuffers", iocshArgInt};
+static const iocshArg eigerDetectorConfigArg4 = {"maxMemory", iocshArgInt};
+static const iocshArg eigerDetectorConfigArg5 = {"priority", iocshArgInt};
+static const iocshArg eigerDetectorConfigArg6 = {"stackSize", iocshArgInt};
 static const iocshArg * const eigerDetectorConfigArgs[] = {
     &eigerDetectorConfigArg0, &eigerDetectorConfigArg1, &eigerDetectorConfigArg2,
-    &eigerDetectorConfigArg3, &eigerDetectorConfigArg4, &eigerDetectorConfigArg5};
+    &eigerDetectorConfigArg3, &eigerDetectorConfigArg4, &eigerDetectorConfigArg5,
+    &eigerDetectorConfigArg6};
 
-static const iocshFuncDef configeigerDetector = {"eigerDetectorConfig", 6, eigerDetectorConfigArgs};
+static const iocshFuncDef configeigerDetector = {"eigerDetectorConfig", 7, eigerDetectorConfigArgs};
 
 static void configeigerDetectorCallFunc(const iocshArgBuf *args)
 {
     eigerDetectorConfig(args[0].sval, args[1].sval, args[2].ival,
-                        args[3].ival, args[4].ival, args[5].ival);
+                        args[3].ival, args[4].ival, args[5].ival,
+                        args[6].ival);
 }
 
 static void eigerDetectorRegister(void)
@@ -1979,4 +1982,3 @@ static void eigerDetectorRegister(void)
 extern "C" {
     epicsExportRegistrar(eigerDetectorRegister);
 }
-
