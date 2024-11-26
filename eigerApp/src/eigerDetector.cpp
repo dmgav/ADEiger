@@ -1969,7 +1969,7 @@ static const iocshFuncDef configeigerDetector = {"eigerDetectorConfig", 7, eiger
 
 static void configeigerDetectorCallFunc(const iocshArgBuf *args)
 {
-    eigerDetectorConfig(args[0].sval, args[1].sval, args[2].ival,
+    eigerDetectorConfig(args[0].sval, args[1].sval, args[2].sval,
                         args[3].ival, args[4].ival, args[5].ival,
                         args[6].ival);
 }
