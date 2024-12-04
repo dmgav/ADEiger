@@ -1458,7 +1458,8 @@ void eigerDetector::streamTask (void)
             free(frame.data);
 
             // Put the frame number and timestamp into the buffer
-            pArray->uniqueId = imageCounter;
+            // pArray->uniqueId = imageCounter;
+            pArray->uniqueId = frame.frame;
 
             updateTimeStamps(pArray);
 
