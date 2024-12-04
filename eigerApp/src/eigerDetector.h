@@ -100,7 +100,7 @@ typedef enum {
 class eigerDetector : public ADDriver
 {
 public:
-    eigerDetector(const char *portName, const char *serverHostname,
+    eigerDetector(const char *portName, const char *serverHostname, const char *streamHostname,
                   int maxBuffers, size_t maxMemory, int priority, int stackSize);
 
     // These are the methods that we override from ADDriver
@@ -134,7 +134,7 @@ public:
         COMP_ALGO_LZ4,
         COMP_ALGO_BSLZ4
     };
-    
+
     enum trigger_mode
     {
         TRIGGER_MODE_INTS,
